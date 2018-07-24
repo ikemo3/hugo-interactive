@@ -1,0 +1,42 @@
+{{- $name := .Get "name" }}
+{{- if (ne $name (lower (.Get "name"))) }}
+{{- errorf "変数名には大文字は使えません。%s" .Page.File.Path }}
+{{- end }}
+{{- $variables := $.Page.Params.variables }}
+{{- if (not $variables) }}
+  <input type="text" v-model="{{ $name }}" />
+{{- else }}
+  {{- $hash := index $variables $name }}
+  {{- if (not $hash) }}
+    <input type="text" v-model="{{ $name }}" />
+  {{- else }}
+    {{- $type := default "text" (index $hash "type") }}
+    {{- if $name }}
+      {{- if (eq $type "text") -}}
+        <input type="text" v-model="{{ $name }}" />
+      {{- else if (eq $type "number") -}}
+        <input type="number" v-model.number="{{ $name }}" />
+      {{- else if (eq $type "select") -}}
+        {{- $options := index $hash "options" -}}
+        {{- if $options }}
+        <select v-model="{{ $name }}">
+          <option disabled value=""></option>
+          {{- range $options }}
+          {{- $value := index . "value" -}}
+          {{- $label := index . "label" -}}
+          {{ if $label }}
+            <option value="{{ $value }}">{{ $label }}({{ $value }})</option>
+            {{ else }}
+            <option value="{{ $value }}">{{ $value }}</option>
+            {{- end }}
+          {{- end }}
+        </select>
+        {{- else }}
+          {{- errorf "type=selectですが、optionsが存在しません。" }}
+        {{- end }}
+      {{- else }}
+        {{ errorf "Unknown type %s" $type }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end -}}

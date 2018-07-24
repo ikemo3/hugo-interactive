@@ -1,0 +1,46 @@
+{{- if (or .Params.variables .Params.computed) }}
+<script src="{{ "js/hugo-variable/vue.min.js" | relURL }}"></script>
+<script src="{{ "js/hugo-variable/moment.min.js" | relURL }}"></script>
+<script src="{{ "js/hugo-variable/sprintf.min.js" | relURL }}"></script>
+<script>
+  var vue_computed =
+  {
+    {{- with .Params.computed }}
+    {{- range $name, $hash := . }}
+    {{- $value := index $hash "value" }}
+    "{{ $name }}": function() { {{ $value | safeJS }} },
+    {{- end }}
+    {{- end }}
+  };
+
+  var vue_variables =
+  { 
+    {{- range $name, $hash := .Params.variables }}
+      {{- $value := index $hash "value" }}
+      {{- $func := index $hash "function" }}
+      {{- $datetime := index $hash "datetime" }}
+      {{- if (eq (index $hash "type") "number") }}
+        {{- if $func }}
+          "{{ $name }}": {{ $func | safeJS }},
+        {{- else }}
+          "{{ $name }}": {{ $value }},
+        {{- end }}
+      {{- else }}
+        {{- if $func }}
+          "{{ $name }}": {{ $func | safeJS }},
+        {{- else if $datetime }}
+          "{{ $name }}": moment().format({{ $datetime }}),
+        {{- else }}
+          "{{ $name }}": "{{ $value }}",
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  };
+
+  var vue_delimiters = {{ default (slice "{{" "}}") .Params.delimiters }};
+  document.addEventListener('DOMContentLoaded', function() {
+    init_vue(vue_variables, vue_computed, vue_delimiters);
+  });
+</script>
+<script src="{{ "js/hugo-variable/site.js" | relURL }}"></script>
+{{- end }}
